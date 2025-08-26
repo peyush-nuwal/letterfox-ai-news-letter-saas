@@ -10,6 +10,7 @@ import {
 } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 interface AuthContextType {
   user: User | null;
@@ -25,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-
+ const router = useRouter();
   useEffect(() => {
     let mounted = true;
 
@@ -57,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
+    router.push("/signin")
   };
 
   return (

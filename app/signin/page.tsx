@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useState } from "react";
 import { Mail, Lock, User, Eye, EyeOff, LogIn } from "lucide-react";
 import { z, ZodError } from "zod";
+import { Router } from "next/router";
+import { useRouter } from "next/navigation";
 
 
 
@@ -49,6 +51,7 @@ export default function SignInPage() {
   const [errors, setErrors] = useState<Record<string, string>>({}); // field-level errors
 
   const supabase = createClient();
+  const router = useRouter()
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -90,6 +93,7 @@ export default function SignInPage() {
         if (error) throw error;
         setMessage("🎉 Signed in successfully!");
       }
+        router.push("/dashboard");
     } catch (error) {
       if (error instanceof ZodError) {
         const fieldErrors: Record<string, string> = {};
@@ -117,6 +121,7 @@ export default function SignInPage() {
         options: { redirectTo: window.location.origin },
       });
       if (error) throw error;
+      router.push("/dashboard")
     } catch (error: unknown) {
       if (error instanceof Error) {
         setMessage(`❌ ${error.message || "Google login failed"}`);

@@ -29,6 +29,8 @@ export default function RootLayout({
         className={`${inter.variable} ${merriweather.variable} antialiased`}
       >
         {children}
+
+       
       </body>
     </html>
   );

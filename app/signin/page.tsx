@@ -1,8 +1,41 @@
 "use client";
+
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import { useState } from "react";
 import { Mail, Lock, User, Eye, EyeOff, LogIn } from "lucide-react";
+import { z, ZodError } from "zod";
+
+
+
+const signInSchema = z.object({
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .max(100, "Email must be under 100 characters")
+    .email("Invalid email address"),
+
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(64, "Password must be under 64 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(
+      /[^A-Za-z0-9]/,
+      "Password must contain at least one special character"
+    ),
+});
+
+const signUpSchema = signInSchema.extend({
+  name: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(50, "Name must be under 50 characters")
+    .regex(/^[a-zA-Z\s]+$/, "Name should only contain letters and spaces"),
+});
+
 
 export default function SignInPage() {
   const [isSignUp, setIsSignUp] = useState<boolean>(false);
@@ -13,17 +46,20 @@ export default function SignInPage() {
     email: "",
     password: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({}); // field-level errors
 
   const supabase = createClient();
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" })); // clear error while typing
   };
 
   const toggleAuthMode = () => {
     setIsSignUp((prev) => !prev);
     setMessage(null);
+    setErrors({});
   };
 
   const toggleShowPassword = () => {
@@ -32,7 +68,12 @@ export default function SignInPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
     try {
+      // validate with Zod
+      const schema = isSignUp ? signUpSchema : signInSchema;
+      schema.parse(formData);
+
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({
           email: formData.email,
@@ -49,8 +90,23 @@ export default function SignInPage() {
         if (error) throw error;
         setMessage("🎉 Signed in successfully!");
       }
-    } catch (error: any) {
-      setMessage(`❌ ${error.message || "Something went wrong"}`);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.issues.forEach((issue) => {
+          // ✅ use `.issues` (not `.errors`)
+          const field = issue.path[0];
+          if (typeof field === "string") {
+            fieldErrors[field] = issue.message;
+          }
+        });
+        setErrors(fieldErrors);
+        setMessage("❌ Please fix the highlighted errors.");
+      } else if (error instanceof Error) {
+        setMessage(`❌ ${error.message || "Something went wrong"}`);
+      } else {
+        setMessage("❌ Something went wrong");
+      }
     }
   };
 
@@ -61,8 +117,12 @@ export default function SignInPage() {
         options: { redirectTo: window.location.origin },
       });
       if (error) throw error;
-    } catch (error: any) {
-      setMessage(`❌ ${error.message || "Google login failed"}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setMessage(`❌ ${error.message || "Google login failed"}`);
+      } else {
+        setMessage("❌ Google login failed");
+      }
     }
   };
 
@@ -134,6 +194,9 @@ export default function SignInPage() {
                     required
                   />
                 </div>
+                {errors.name && (
+                  <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                )}
               </div>
             )}
             <div>
@@ -153,9 +216,12 @@ export default function SignInPage() {
                   value={formData.email}
                   onChange={handleFormChange}
                   className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-secondary focus:outline-none"
-                  required
+                
                 />
               </div>
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+              )}
             </div>
             <div>
               <label
@@ -176,6 +242,23 @@ export default function SignInPage() {
                   className="w-full pl-10 pr-10 py-2 border border-border rounded-lg focus:ring-2 focus:ring-secondary focus:outline-none"
                   required
                 />
+                <div className="mt-2 mx-auto w-12/12 flex justify-between items-center gap-2 text-xs text-gray-500 mb-1">
+                  <span>Weak</span>
+
+                  <div className="h-[5px] w-full bg-zinc-200 rounded">
+                    <div
+                      className={`h-[6px] rounded transition-all duration-300 ease-in-out ${
+                        formData.password.length < 6
+                          ? "bg-red-500 w-1/4" // Weak
+                          : formData.password.length < 10
+                          ? "bg-yellow-400 w-2/4" // Medium
+                          : "bg-green-500 w-full" // Strong
+                      }`}
+                    />
+                  </div>
+                  <span>Strong</span>
+                </div>
+
                 <span
                   onClick={toggleShowPassword}
                   className="absolute top-2.5 right-3 text-gray-500 hover:text-primary cursor-pointer"
@@ -187,6 +270,9 @@ export default function SignInPage() {
                   )}
                 </span>
               </div>
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+              )}
             </div>
             <button
               type="submit"

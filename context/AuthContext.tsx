@@ -6,11 +6,11 @@ import {
   useEffect,
   useState,
   ReactNode,
-    useMemo,
+  useMemo,
 } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 interface AuthContextType {
   user: User | null;
@@ -22,11 +22,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const supabase = useMemo(() => createClient(), []); // ✅ one client
+  const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
- const router = useRouter();
+  const router = useRouter();
+  const pathname = usePathname();
+
   useEffect(() => {
     let mounted = true;
 
@@ -45,20 +47,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // 🚀 Auto-routing here
+      if (!session && pathname !== "/signin") {
+        router.push("/signin");
+      }
+      if (session && pathname === "/signin") {
+        router.push("/dashboard");
+      }
     });
 
     return () => {
       mounted = false;
-      subscription.unsubscribe(); // ✅ proper cleanup
+      subscription.unsubscribe();
     };
-  }, [supabase]);
-
+  }, [supabase, router, pathname]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
-    router.push("/signin")
+    router.push("/signin"); // 🚀 force redirect after logout
   };
 
   return (
@@ -66,9 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-
 }
-
 
 export function useAuth() {
   const context = useContext(AuthContext);

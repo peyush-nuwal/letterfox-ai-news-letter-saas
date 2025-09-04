@@ -3,6 +3,7 @@ import { Inter, Merriweather } from "next/font/google";
 import "./globals.css";
 
 import { AuthProvider } from "@/context/AuthContext";
+import Navbar from "@/components/Navbar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -30,12 +31,10 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${merriweather.variable} antialiased`}
       >
-        <AuthProvider >
-        
-        {children}
+        <AuthProvider>
+          <Navbar />
+          {children}
         </AuthProvider>
-
-       
       </body>
     </html>
   );

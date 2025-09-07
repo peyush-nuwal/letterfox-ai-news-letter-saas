@@ -7,8 +7,8 @@ export default inngest.createFunction({ id: "newsletter/scheduled" }, { event: "
       
 
     // fetch 
+    const catgories = ["tech", "AI", "python"];
     const allArticles = await step.run("fetch-news", async () => {
-      const catgories = ["tech", "AI", "python"];
       return fetchArticles(catgories);
     });
 
@@ -48,5 +48,6 @@ export default inngest.createFunction({ id: "newsletter/scheduled" }, { event: "
       },
     });
     
-    console.log(summary)
+    console.log(summary.choices[0].message.content)
+    return {}
 })

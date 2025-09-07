@@ -1,3 +1,4 @@
+import { Edit, SlidersHorizontal, CreditCard } from "lucide-react";
 import Link from "next/link";
 
 export default function DashboardPage() {
@@ -13,9 +14,9 @@ export default function DashboardPage() {
         </p>
       </div>
       {/* content  */}
-      <div className="">
+      <div>
         {/* current preferences */}
-        <div className="max-w-4xl p-8 mx-auto my-8 bg-white rounded-xl">
+        <div className="w-full max-w-3xl p-8 mx-auto my-8 bg-white rounded-xl">
           <h2 className="text-2xl font-semibold ">Current preferences</h2>
           <div className="my-8">
             {true ? (
@@ -77,6 +78,21 @@ export default function DashboardPage() {
           </button>
         </div>
         {/* Actions  */}
+        <div className="w-full max-w-3xl p-8 mx-auto my-8 bg-white rounded-xl">
+          <h2 className="text-2xl font-semibold ">Actions</h2>
+
+          <div className="space-y-2 my-5">
+            <button className="w-full py-3 btn btn-primary flex items-center justify-center gap-3">
+              <Edit /> Manage Preferences
+            </button>
+            <button className="w-full  py-3  btn bg-red-100 border border-red-600 text-red-600   flex items-center justify-center gap-3 hover:scale-[101%] active:scale-[99%] ">
+              <SlidersHorizontal /> Pause Newsletter
+            </button>
+            <button className="w-full  py-3  btn border   flex items-center justify-center gap-3 hover:scale-[101%] active:scale-[99%] ">
+              <CreditCard /> manage Subscription
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

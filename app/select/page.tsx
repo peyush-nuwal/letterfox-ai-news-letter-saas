@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "react-toastify";
 
 const categories = [
   {
@@ -48,11 +49,13 @@ const frequencyOptions = [
 export default function SelectPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedFrequency, setSelectedFrequency] = useState<string>("weekly");
-  const [isLoading, setIsLoading] = useState(false);
+
   const [isSaving, setIsSaving] = useState(false);
+
   const router = useRouter();
   const { user } = useAuth();
 
+  const notify = () => toast("working");
   // useEffect(() => {
   //   fetch("/api/subscription-status")
   //     .then((r) => r.json())
@@ -78,38 +81,43 @@ export default function SelectPage() {
     e.preventDefault();
 
     if (selectedCategories.length === 0) {
-      alert("Please select at least one category");
+      toast.warn("Please select at least one category");
       return;
     }
 
     if (!user) {
-      alert("Please sign in to continue");
+      toast.warn("Please sign in to continue");
       return;
     }
 
     setIsSaving(true);
     try {
-      const response = await fetch("/api/user-preferences", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          categories: selectedCategories,
-          frequency: selectedFrequency,
-          email: user.email,
+      await toast.promise(
+        fetch("/api/user-preferences", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            categories: selectedCategories,
+            frequency: selectedFrequency,
+            email: user.email,
+          }),
+        }).then((res) => {
+          if (!res.ok) {
+            throw new Error("Failed to save preferences");
+          }
+          return res.json();
         }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save preferences");
-      }
-
-      alert(
-        "Your newsletter preferences have been saved! You'll start receiving newsletters according to your schedule."
+        {
+          pending: "Saving your preferences...",
+          success: "Preferences saved successfully 🎉",
+          error: "Failed to save preferences. Please try again.",
+        }
       );
+
       router.push("/dashboard");
     } catch (error) {
       console.error("Error:", error);
-      alert("Failed to save preferences. Please try again.");
+      toast.error("Failed to save preferences. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -260,13 +268,14 @@ export default function SelectPage() {
             </div>
             <button
               type="submit"
+              disabled={isSaving || selectedCategories.length === 0}
               className={`px-6 py-3 rounded-lg font-medium text-white transition-colors ${
-                selectedCategories.length === 0
+                isSaving || selectedCategories.length === 0
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-primary hover:bg-primary"
               }`}
             >
-              Save Preferences
+              {isSaving ? "Saving..." : "Save Preferences"}
             </button>
           </div>
         </form>

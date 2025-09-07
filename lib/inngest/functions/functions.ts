@@ -1,3 +1,2 @@
-import { inngest } from "../client";
-
-export const functions=[]
+import scheduledNewsLetter from "./scheduled-newsLetter"
+export const functions = [scheduledNewsLetter];
